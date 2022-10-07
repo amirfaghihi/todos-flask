@@ -1,10 +1,10 @@
 from flask import Blueprint, request
 
-from todos_app.exceptions.database_exception import DatabaseException
+from todos_app.repositories.user_repo import add_user
 from todos_app.exceptions.entity_already_exist_exception import EntityAlreadyExistException
 from todos_app.models import User
 from todos_app.models.role import Role
-from todos_app.repositories import user_repo, db
+from todos_app.repositories import user_repo
 
 from todos_app.exceptions.authentication_exception import AuthenticationException
 from todos_app.exceptions.invalid_request_exception import InvalidRequestException
@@ -58,23 +58,17 @@ def register():
     role = Role.get_by_name(role_name)
 
     if not user:
-        try:
-            user = User(name=name, username=username, password=password)
-            user.role = role
-            # insert the user
-            db.session.add(user)
-            db.session.commit()
+        user = User(name=name, username=username, password=password)
+        user.role = role
+        # insert the user
+        add_user(user)
 
-            # generate the auth token
-            access_token = create_access_token(identity=user)
-            refresh_token = create_refresh_token(identity=user)
+        # generate the auth token
+        access_token = create_access_token(identity=user)
+        refresh_token = create_refresh_token(identity=user)
 
-            return {'user': user_schema.dump(user),
-                    'access_token': access_token,
-                    'refresh_token': refresh_token}
-
-        except Exception:
-            db.session.rollback()
-            raise DatabaseException('Register was unsuccessful')
+        return {'user': user_schema.dump(user),
+                'access_token': access_token,
+                'refresh_token': refresh_token}
     else:
         raise EntityAlreadyExistException('User already exists')

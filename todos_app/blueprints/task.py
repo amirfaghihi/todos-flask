@@ -1,7 +1,7 @@
 from flask import Blueprint, request
 from flask_jwt_extended import jwt_required, current_user
 
-from todos_app.app import rbac
+from todos_app.blueprints import rbac
 from todos_app.exceptions.invalid_request_exception import InvalidRequestException
 from todos_app.repositories import project_repo, user_repo, task_repo
 from todos_app.responses.base_response import BaseResponse
@@ -12,8 +12,7 @@ task_blueprint = Blueprint(name='task_blueprint', import_name=__name__, url_pref
 
 
 @task_blueprint.get('/all')
-@jwt_required()
-@rbac.allow(['developer'])
+@rbac.allow(['developer'], methods=['GET'])
 def get_tasks():
     if not current_user.project_id:
         raise InvalidRequestException('User does not have a project')
@@ -36,8 +35,8 @@ def get_tasks():
 
 @task_blueprint.get('/self')
 @jwt_required()
-@rbac.allow(['developer'])
-def get_tasks():
+@rbac.allow(['developer'], methods=['GET'])
+def get_tasks_for_user():
     tasks = tasks_schema.dump(current_user.tasks)
     meta = {
         'page': tasks.page,
@@ -54,7 +53,7 @@ def get_tasks():
 
 @task_blueprint.post('/assign')
 @jwt_required()
-@rbac.allow(['project_manager'])
+@rbac.allow(['project_manager'], methods=['POST'])
 def assign_task():
     assignee_id = int(request.args.get('assignee'))
     task_id = int(request.args.get('task_id'))

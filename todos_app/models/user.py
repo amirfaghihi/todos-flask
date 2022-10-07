@@ -2,6 +2,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 from todos_app.models.usertask import user_task
 from flask_rbac import UserMixin
+
 from todos_app.repositories import db
 
 

@@ -1,5 +1,6 @@
-from todos_app.repositories import db
 from flask_rbac import RoleMixin
+
+from todos_app.repositories import db
 
 roles_parents = db.Table(
     'roles_parents',

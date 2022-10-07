@@ -4,6 +4,15 @@ from todos_app.models import User
 from todos_app.repositories import db
 
 
+def add_user(user):
+    try:
+        db.session.add(user)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise DatabaseException('Register was unsuccessful')
+
+
 def find_by_id(id: int) -> User:
     entity = User.query.filter_by(id=id).first()
     if not entity:
