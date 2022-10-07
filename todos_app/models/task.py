@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from todos_app.repositories import db
 
@@ -13,4 +13,10 @@ class Task(db.Model):
 
     project_id = db.Column(db.Integer, db.ForeignKey('Project.id'))
 
-    deadline = db.Column(db.DateTime, default=datetime.now())
+    deadline = db.Column(db.DateTime, default=datetime.now() + timedelta(days=7))
+
+    def __init__(self, title, description, story_points, deadline):
+        self.title = title
+        self.description = description
+        self.story_points = story_points
+        self.deadline = deadline

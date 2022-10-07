@@ -1,9 +1,9 @@
 from flask import Blueprint, request
 
+from todos_app.models.role import Role
 from todos_app.repositories.user_repo import add_user
 from todos_app.exceptions.entity_already_exist_exception import EntityAlreadyExistException
 from todos_app.models import User
-from todos_app.models.role import Role
 from todos_app.repositories import user_repo
 
 from todos_app.exceptions.authentication_exception import AuthenticationException
@@ -25,14 +25,15 @@ def login():
         raise InvalidRequestException("Missing username or password")
 
     user = User.query.filter_by(username=username).first()
+    role = Role.query.filter_by(id=user.role_id).first()
 
     if not user:
         raise AuthenticationException('کاربر یافت نشد')
 
     if check_password_hash(user.password, password):
         # generates the JWT Token
-        access_token = create_access_token(identity=user)
-        refresh_token = create_refresh_token(identity=user)
+        access_token = create_access_token(identity=user, additional_claims={'role': role.name})
+        refresh_token = create_refresh_token(identity=user, additional_claims={'role': role.name})
 
         return {'user': user_schema.dump(user),
                 'access_token': access_token,
@@ -49,23 +50,28 @@ def refresh_use_token():
 
 @auth_blueprint.post('/register')
 def register():
-    name = request.args.get('name')
-    username = request.args.get('username')
-    password = request.args.get('password')
-    role_name = request.args.get('role')
+    name = request.json.get('name')
+    username = request.json.get('username')
+    password = request.json.get('password')
+    confirm = request.json.get('confirm')
+    role_name = request.json.get('role')
+
+    if password != confirm:
+        raise InvalidRequestException('Password and Confirm should be equal')
 
     user = user_repo.find_by_username(username)
     role = Role.get_by_name(role_name)
 
     if not user:
         user = User(name=name, username=username, password=password)
-        user.role = role
+        user.role_id = role.id
+
         # insert the user
         add_user(user)
 
         # generate the auth token
-        access_token = create_access_token(identity=user)
-        refresh_token = create_refresh_token(identity=user)
+        access_token = create_access_token(identity=user, additional_claims={'role': role.name})
+        refresh_token = create_refresh_token(identity=user, additional_claims={'role': role.name})
 
         return {'user': user_schema.dump(user),
                 'access_token': access_token,
